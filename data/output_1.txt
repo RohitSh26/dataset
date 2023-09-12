@@ -8,22 +8,18 @@ size 104857600
         xmlns:xcdg="http://schemas.xceed.com/wpf/xaml/datagrid"
         Title="Expandable Data Grid Example" Height="400" Width="600">
     <Grid>
-        <xcdg:DataGridControl Name="ExpandableDataGrid" AutoCreateColumns="False" ItemsSource="{Binding Persons}">
+        <xcdg:DataGridControl Name="ExpandableDataGrid" ItemsSource="{Binding Persons}" AutoCreateColumns="False">
             <xcdg:DataGridControl.Columns>
-                <xcdg:Column FieldName="Name" Title="Name"/>
-                <xcdg:Column FieldName="Age" Title="Age"/>
+                <xcdg:Column FieldName="Name" Title="Name" />
+                <xcdg:Column FieldName="Age" Title="Age" />
             </xcdg:DataGridControl.Columns>
-            <xcdg:DataGridControl.View>
-                <xcdg:TableView>
-                    <xcdg:TableView.Templates>
-                        <DataTemplate x:Key="detailsTemplate">
-                            <TextBlock Text="{Binding AdditionalDetails}" />
-                        </DataTemplate>
-                    </xcdg:TableView.Templates>
-                </xcdg:TableView>
-            </xcdg:DataGridControl.View>
             <xcdg:DataGridControl.DetailConfigurations>
-                <xcdg:DetailConfiguration Title="Details" Template="{StaticResource detailsTemplate}">
+                <xcdg:DetailConfiguration>
+                    <xcdg:DetailConfiguration.ContentTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding AdditionalDetails}" Margin="10"/>
+                        </DataTemplate>
+                    </xcdg:DetailConfiguration.ContentTemplate>
                 </xcdg:DetailConfiguration>
             </xcdg:DataGridControl.DetailConfigurations>
         </xcdg:DataGridControl>
