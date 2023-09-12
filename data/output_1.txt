@@ -1,4 +1,31 @@
 
+<dxg:GridControl x:Name="grid" ItemsSource="{Binding Invoices}">
+    <!-- ... other settings ... -->
+    <dxg:GridControl.View>
+        <dxg:TableView x:Name="view">
+            <dxg:TableView.GroupRowTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="ExpandCollapseIndicator" Text="+" Margin="4"/>
+                        <TextBlock Text="{Binding Value}" Margin="4"/>
+                    </StackPanel>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding RowData.IsExpanded}" Value="True">
+                            <Setter TargetName="ExpandCollapseIndicator" Property="Text" Value="-"/>
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </dxg:TableView.GroupRowTemplate>
+        </dxg:TableView>
+    </dxg:GridControl.View>
+</dxg:GridControl>
+
+
+
+
+
+
+
 Certainly, sticking to the MVVM paradigm involves moving the logic into the ViewModel and using commands or events that the view can bind to. Here's how you could achieve the same effect using MVVM.
 
 ### Model
