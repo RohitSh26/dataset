@@ -1,9 +1,98 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1588a43a89f9bb85cb0dc46a10e3b26780a2964d8768efdcafcaedb6123e7a2f
-size 104857600
 
+Certainly, sticking to the MVVM paradigm involves moving the logic into the ViewModel and using commands or events that the view can bind to. Here's how you could achieve the same effect using MVVM.
+
+### Model
+```csharp
+public class Invoice
+{
+    public string ProductName { get; set; }
+    public double Price { get; set; }
+    public double Discount { get; set; }
+    public string InvoiceType { get; set; }
+}
+```
+
+### ViewModel
+
+```csharp
+public class InvoiceViewModel : INotifyPropertyChanged
+{
+    private ObservableCollection<Invoice> _invoices;
+
+    public ObservableCollection<Invoice> Invoices
+    {
+        get { return _invoices; }
+        set
+        {
+            _invoices = value;
+            OnPropertyChanged(nameof(Invoices));
+        }
+    }
+
+    public InvoiceViewModel()
+    {
+        Invoices = new ObservableCollection<Invoice>
+        {
+            new Invoice { ProductName = "Apple", Price = 1.2, Discount = 0, InvoiceType = "Food" },
+            new Invoice { ProductName = "Banana", Price = 0.8, Discount = 0, InvoiceType = "Food" },
+            // More data here
+        };
+    }
+
+    public void DuplicateRows(string groupValue)
+    {
+        var invoicesInGroup = Invoices.Where(i => i.InvoiceType.Equals(groupValue)).Skip(1).ToList();
+
+        foreach (var invoice in invoicesInGroup)
+        {
+            int index = Invoices.IndexOf(invoice);
+            Invoices.Insert(index + 1, new Invoice
+            {
+                ProductName = invoice.ProductName,
+                Price = invoice.Price,
+                Discount = invoice.Discount,
+                InvoiceType = invoice.InvoiceType
+            });
+        }
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected virtual void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+```
+
+### View (MainWindow.xaml)
+
+```xaml
+<Window x:Class="WpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <dxg:GridControl x:Name="grid" ItemsSource="{Binding Invoices}">
+            <dxg:GridControl.Columns>
+                <dxg:GridColumn FieldName="ProductName"/>
+                <dxg:GridColumn FieldName="Price"/>
+                <dxg:GridColumn FieldName="Discount"/>
+                <dxg:GridColumn FieldName="InvoiceType" GroupIndex="0"/>
+            </dxg:GridControl.Columns>
+            <dxg:GridControl.View>
+                <dxg:TableView x:Name="view"/>
+            </dxg:GridControl.View>
+        </dxg:GridControl>
+    </Grid>
+</Window>
+```
+
+### Code-behind for View (MainWindow.xaml.cs)
+
+```csharp
 using DevExpress.Xpf.Grid;
-using System.Linq;
 using System.Windows;
 
 namespace WpfApp
@@ -13,90 +102,24 @@ namespace WpfApp
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new InvoiceViewModel();
-        }
+            var viewModel = new InvoiceViewModel();
+            this.DataContext = viewModel;
 
-        private void OnGroupRowExpanded(object sender, RowEventArgs e)
-        {
-            if (e.RowHandle != GridControl.InvalidRowHandle)
+            // Use EventToCommandBehavior or interaction triggers to connect this to ViewModel in a more MVVM-compliant way
+            this.grid.GroupRowExpanded += (sender, e) =>
             {
-                var groupValue = grid.GetGroupRowValue(e.RowHandle);
-                if (groupValue != null)
+                if (e.RowHandle != GridControl.InvalidRowHandle)
                 {
-                    var viewModel = (InvoiceViewModel)this.DataContext;
-                    var invoicesInGroup = viewModel.Invoices
-                        .Where(i => i.InvoiceType.Equals(groupValue.ToString()))
-                        .Skip(1)  // Skip the first record as it's already the parent
-                        .ToList();
-
-                    foreach (var invoice in invoicesInGroup)
+                    var groupValue = grid.GetGroupRowValue(e.RowHandle);
+                    if (groupValue != null)
                     {
-                        // Normally, you'd manipulate ObservableCollection here to reflect the changes
-                        // For this example, assume you have a method to add these as child rows under the parent
-                        // For example: AddAsChildRow(parentRowHandle, invoice);
+                        viewModel.DuplicateRows(groupValue.ToString());
                     }
                 }
-            }
-        }
-    }
-}
-
-using DevExpress.Xpf.Grid;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows;
-
-namespace WpfApp
-{
-    public partial class MainWindow : Window
-    {
-        public ObservableCollection<Invoice> Invoices { get; set; }
-
-        public MainWindow()
-        {
-            InitializeComponent();
-            Invoices = new ObservableCollection<Invoice>
-            {
-                new Invoice { ProductName = "Apple", Price = 1.2, Discount = 0, InvoiceType = "Food" },
-                new Invoice { ProductName = "Banana", Price = 0.8, Discount = 0, InvoiceType = "Food" },
-                new Invoice { ProductName = "Carrot", Price = 1.5, Discount = 0, InvoiceType = "Vegetable" },
-                new Invoice { ProductName = "Peas", Price = 1.0, Discount = 0, InvoiceType = "Vegetable" },
             };
-            DataContext = this;
-        }
-
-        private void OnGroupRowExpanded(object sender, RowEventArgs e)
-        {
-            if (e.RowHandle != GridControl.InvalidRowHandle)
-            {
-                var groupValue = grid.GetGroupRowValue(e.RowHandle);
-                if (groupValue != null)
-                {
-                    DuplicateRows(groupValue.ToString());
-                }
-            }
-        }
-
-        private void DuplicateRows(string groupValue)
-        {
-            var invoicesInGroup = Invoices
-                .Where(i => i.InvoiceType.Equals(groupValue))
-                .Skip(1)  // Skip the first record as it's already the parent
-                .ToList();
-
-            foreach (var invoice in invoicesInGroup)
-            {
-                int index = Invoices.IndexOf(invoice);
-                // Insert the duplicate invoice next to the original one
-                Invoices.Insert(index + 1, new Invoice 
-                { 
-                    ProductName = invoice.ProductName, 
-                    Price = invoice.Price, 
-                    Discount = invoice.Discount, 
-                    InvoiceType = invoice.InvoiceType 
-                });
-            }
         }
     }
 }
+```
 
+In this code, the event `GroupRowExpanded` still exists in the code-behind, but it simply forwards the call to the ViewModel. You can replace this with an MVVM-compliant behavior or interaction trigger. The logic for duplicating the rows now resides in the ViewModel, adhering to the MVVM principles.
