@@ -1,3 +1,73 @@
 version https://git-lfs.github.com/spec/v1
 oid sha256:1588a43a89f9bb85cb0dc46a10e3b26780a2964d8768efdcafcaedb6123e7a2f
 size 104857600
+
+<Window x:Class="ExpandableDataGridExample.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:xcdg="http://schemas.xceed.com/wpf/xaml/datagrid"
+        Title="Expandable Data Grid Example" Height="400" Width="600">
+    <Grid>
+        <xcdg:DataGridControl Name="ExpandableDataGrid" AutoCreateColumns="False">
+            <xcdg:DataGridControl.Columns>
+                <xcdg:Column FieldName="Name" Title="Name" Width="150"/>
+                <xcdg:Column FieldName="Age" Title="Age" Width="100"/>
+            </xcdg:DataGridControl.Columns>
+            <xcdg:DataGridControl.View>
+                <xcdg:TableView>
+                    <xcdg:TableView.Theme>
+                        <xcdg:AeroNormalColorTheme/>
+                    </xcdg:TableView.Theme>
+                </xcdg:TableView>
+            </xcdg:DataGridControl.View>
+            <xcdg:DataGridControl.HierarchySettings>
+                <xcdg:HierarchicalGroupByControl.HierarchySettings>
+                    <xcdg:HierarchySettings HierarchyChildTemplate="{StaticResource ChildTemplate}"/>
+                </xcdg:HierarchicalGroupByControl.HierarchySettings>
+            </xcdg:DataGridControl.HierarchySettings>
+        </xcdg:DataGridControl>
+
+        <Window.Resources>
+            <DataTemplate x:Key="ChildTemplate">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Additional Details" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding AdditionalDetails}" Margin="20,0,0,0"/>
+                </StackPanel>
+            </DataTemplate>
+        </Window.Resources>
+    </Grid>
+</Window>
+
+
+using System.Collections.ObjectModel;
+using System.Windows;
+
+namespace ExpandableDataGridExample
+{
+    public partial class MainWindow : Window
+    {
+        public ObservableCollection<Person> Persons { get; set; }
+
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            Persons = new ObservableCollection<Person>
+            {
+                new Person { Name = "John", Age = 30, AdditionalDetails = "Likes reading" },
+                new Person { Name = "Jane", Age = 25, AdditionalDetails = "Enjoys hiking" },
+                new Person { Name = "Emily", Age = 20, AdditionalDetails = "Loves painting" },
+                new Person { Name = "Mike", Age = 35, AdditionalDetails = "Avid cyclist" }
+            };
+
+            ExpandableDataGrid.ItemsSource = Persons;
+        }
+    }
+
+    public class Person
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+        public string AdditionalDetails { get; set; }
+    }
+}
