@@ -1,4 +1,26 @@
 
+using System;
+using System.Globalization;
+using System.Windows.Data;
+
+public class BoolToExpandCollapseSymbolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool isExpanded)
+        {
+            return isExpanded ? "-" : "+";
+        }
+        return null;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+
 <dxg:GridControl x:Name="grid" ItemsSource="{Binding Invoices}">
     <!-- ... other settings ... -->
     <dxg:GridControl.View>
