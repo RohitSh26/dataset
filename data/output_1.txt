@@ -2,18 +2,101 @@ version https://git-lfs.github.com/spec/v1
 oid sha256:1588a43a89f9bb85cb0dc46a10e3b26780a2964d8768efdcafcaedb6123e7a2f
 size 104857600
 
-<xcdg:DataGridControl Name="DataGrid" ItemsSource="{Binding Persons}" AutoCreateColumns="False">
-    <xcdg:DataGridControl.Columns>
-        <xcdg:Column FieldName="IsExpanded" Title="Expand" Width="60">
-            <xcdg:Column.CellContentTemplate>
-                <DataTemplate>
-                    <Button Content="{Binding IsExpanded, Converter={StaticResource BoolToSymbolConverter}}" 
-                            Command="{Binding DataContext.ToggleExpandCommand, RelativeSource={RelativeSource AncestorType=xcdg:DataGridControl}}" 
-                            CommandParameter="{Binding}"/>
-                </DataTemplate>
-            </xcdg:Column.CellContentTemplate>
-        </xcdg:Column>
-        <xcdg:Column FieldName="Name" Title="Name" />
-        <xcdg:Column FieldName="Age" Title="Age" />
-    </xcdg:DataGridControl.Columns>
-</xcdg:DataGridControl>
+using DevExpress.Xpf.Grid;
+using System.Linq;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = new InvoiceViewModel();
+        }
+
+        private void OnGroupRowExpanded(object sender, RowEventArgs e)
+        {
+            if (e.RowHandle != GridControl.InvalidRowHandle)
+            {
+                var groupValue = grid.GetGroupRowValue(e.RowHandle);
+                if (groupValue != null)
+                {
+                    var viewModel = (InvoiceViewModel)this.DataContext;
+                    var invoicesInGroup = viewModel.Invoices
+                        .Where(i => i.InvoiceType.Equals(groupValue.ToString()))
+                        .Skip(1)  // Skip the first record as it's already the parent
+                        .ToList();
+
+                    foreach (var invoice in invoicesInGroup)
+                    {
+                        // Normally, you'd manipulate ObservableCollection here to reflect the changes
+                        // For this example, assume you have a method to add these as child rows under the parent
+                        // For example: AddAsChildRow(parentRowHandle, invoice);
+                    }
+                }
+            }
+        }
+    }
+}
+
+using DevExpress.Xpf.Grid;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+
+namespace WpfApp
+{
+    public partial class MainWindow : Window
+    {
+        public ObservableCollection<Invoice> Invoices { get; set; }
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            Invoices = new ObservableCollection<Invoice>
+            {
+                new Invoice { ProductName = "Apple", Price = 1.2, Discount = 0, InvoiceType = "Food" },
+                new Invoice { ProductName = "Banana", Price = 0.8, Discount = 0, InvoiceType = "Food" },
+                new Invoice { ProductName = "Carrot", Price = 1.5, Discount = 0, InvoiceType = "Vegetable" },
+                new Invoice { ProductName = "Peas", Price = 1.0, Discount = 0, InvoiceType = "Vegetable" },
+            };
+            DataContext = this;
+        }
+
+        private void OnGroupRowExpanded(object sender, RowEventArgs e)
+        {
+            if (e.RowHandle != GridControl.InvalidRowHandle)
+            {
+                var groupValue = grid.GetGroupRowValue(e.RowHandle);
+                if (groupValue != null)
+                {
+                    DuplicateRows(groupValue.ToString());
+                }
+            }
+        }
+
+        private void DuplicateRows(string groupValue)
+        {
+            var invoicesInGroup = Invoices
+                .Where(i => i.InvoiceType.Equals(groupValue))
+                .Skip(1)  // Skip the first record as it's already the parent
+                .ToList();
+
+            foreach (var invoice in invoicesInGroup)
+            {
+                int index = Invoices.IndexOf(invoice);
+                // Insert the duplicate invoice next to the original one
+                Invoices.Insert(index + 1, new Invoice 
+                { 
+                    ProductName = invoice.ProductName, 
+                    Price = invoice.Price, 
+                    Discount = invoice.Discount, 
+                    InvoiceType = invoice.InvoiceType 
+                });
+            }
+        }
+    }
+}
+
