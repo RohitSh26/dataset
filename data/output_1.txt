@@ -1,4 +1,57 @@
 
+<Window x:Class="YourNamespace.YourWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+        xmlns:local="clr-namespace:YourNamespace" <!-- Replace with your actual namespace -->
+        Title="Your Window" Height="450" Width="800">
+
+    <Grid>
+        <dxg:GridControl x:Name="grid" ItemsSource="{Binding Invoices}">
+            <!-- Columns -->
+            <dxg:GridControl.Columns>
+                <dxg:GridColumn FieldName="InvoiceType" GroupIndex="0" AllowSorting="False"/>
+                <dxg:GridColumn FieldName="InvoiceNumber" AllowSorting="False"/>
+                <dxg:GridColumn FieldName="ProductName" AllowSorting="False"/>
+                <dxg:GridColumn FieldName="Price" AllowSorting="False"/>
+            </dxg:GridControl.Columns>
+
+            <!-- TableView -->
+            <dxg:GridControl.View>
+                <dxg:TableView x:Name="view">
+                    <dxg:TableView.RowCellMenuCustomizations>
+                        <!-- Remove the built-in menu items -->
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.SortAscending}"/>
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.SortDescending}"/>
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.ClearSorting}"/>
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.GroupByThisColumn}"/>
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.UngroupThisColumn}"/>
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.ShowGroupPanel}"/>
+                        <RemoveAction ElementName="{x:Static dxg:DefaultColumnMenuItemNamesBase.HideGroupPanel}"/>
+                    </dxg:TableView.RowCellMenuCustomizations>
+
+                    <!-- Group Row Template -->
+                    <dxg:TableView.GroupRowTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Value}" Margin="4"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </dxg:TableView.GroupRowTemplate>
+                    
+                    <!-- Additional TableView properties like ShowSearchPanel, ShowGroupPanel can be set to False here -->
+                    <dxg:TableView.ShowSearchPanel>false</dxg:TableView.ShowSearchPanel>
+                    <dxg:TableView.ShowGroupPanel>false</dxg:TableView.ShowGroupPanel>
+                </dxg:TableView>
+            </dxg:GridControl.View>
+        </dxg:GridControl>
+    </Grid>
+</Window>
+
+
+
+
+
 using System;
 using System.Globalization;
 using System.Windows.Data;
