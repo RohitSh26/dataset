@@ -1,3 +1,82 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3521c61baf256740270bf3a8713e5593a98ddefb58708f1ba03fc155083b9267
-size 456312792
+To integrate the custom expand/collapse icons into your existing code, you can update the XAML and code-behind files as follows:
+
+### 1. Create a Value Converter Class
+
+First, add the `BooleanToVisibilityConverter` class to your project. You can add it in a new .cs file.
+
+```csharp
+using System;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+
+public class BooleanToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool booleanValue)
+        {
+            return booleanValue ? Visibility.Visible : Visibility.Collapsed;
+        }
+        return Visibility.Hidden;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+```
+
+### 2. Update MainWindow.xaml
+
+In your MainWindow.xaml, add the `BooleanToVisibilityConverter` and override the template for `TreeListViewRowIndent`.
+
+Here's an example combining these with a hypothetical `TreeListControl`:
+
+```xaml
+<Window x:Class="YourNamespace.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+        xmlns:local="clr-namespace:YourNamespace"
+        Title="MainWindow">
+        
+    <!-- Add these resources to your existing Window.Resources -->
+    <Window.Resources>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <DataTemplate x:Key="{dxgt:TreeListViewThemeKey ResourceKey=RowIndentTemplate, IsThemed=True}">
+                <Grid>
+                    <TextBlock Text="+" 
+                               Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Collapsed, FallbackValue=Hidden}" 
+                               VerticalAlignment="Center" 
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="-" 
+                               Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Visible, FallbackValue=Hidden}" 
+                               VerticalAlignment="Center" 
+                               HorizontalAlignment="Center"/>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Window.Resources>
+    
+    <!-- Your existing TreeListControl code should go here -->
+    <Grid>
+        <dxg:TreeListControl Name="treeList" 
+                             ItemsSource="{Binding Employees}"
+                             KeyFieldName="ID"
+                             ParentFieldName="ParentID">
+            <!-- Your existing columns and other configurations -->
+        </dxg:TreeListControl>
+    </Grid>
+</Window>
+```
+
+Replace `YourNamespace` with the actual namespace where your `MainWindow` and `BooleanToVisibilityConverter` classes are defined.
+
+### 3. Update MainWindow.xaml.cs (If Needed)
+
+If you've already set the `DataContext` in your MainWindow.xaml.cs, you don't need to change anything there. The `BooleanToVisibilityConverter` will be picked up from the XAML resources.
+
+Now, with these changes, your `TreeListControl` should display a "+" when a node is collapsed and a "-" when a node is expanded.
