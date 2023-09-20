@@ -1,39 +1,71 @@
-To integrate the custom expand/collapse icons into your existing code, you can update the XAML and code-behind files as follows:
+Certainly, let's put it all together.
 
-### 1. Create a Value Converter Class
+### Employee.cs
+```csharp
+namespace YourNamespace
+{
+    public class Employee
+    {
+        public string ID { get; set; }
+        public string ParentID { get; set; }
+        public string Name { get; set; }
+    }
+}
+```
 
-First, add the `BooleanToVisibilityConverter` class to your project. You can add it in a new .cs file.
+### EmployeeViewModel.cs
+```csharp
+using System.Collections.ObjectModel;
 
+namespace YourNamespace
+{
+    public class EmployeeViewModel
+    {
+        public ObservableCollection<Employee> Employees { get; set; }
+
+        public EmployeeViewModel()
+        {
+            Employees = new ObservableCollection<Employee>
+            {
+                new Employee { ID = "root", ParentID = null, Name = "Root"},
+                new Employee { ID = "1", ParentID = "root", Name = "John"},
+                new Employee { ID = "2", ParentID = "1", Name = "Jane"},
+                new Employee { ID = "3", ParentID = "1", Name = "Mark"}
+            };
+        }
+    }
+}
+```
+
+### BooleanToVisibilityConverter.cs
 ```csharp
 using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-public class BooleanToVisibilityConverter : IValueConverter
+namespace YourNamespace
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public class BooleanToVisibilityConverter : IValueConverter
     {
-        if (value is bool booleanValue)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return booleanValue ? Visibility.Visible : Visibility.Collapsed;
+            if (value is bool booleanValue)
+            {
+                return booleanValue ? Visibility.Visible : Visibility.Collapsed;
+            }
+            return Visibility.Hidden;
         }
-        return Visibility.Hidden;
-    }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 ```
 
-### 2. Update MainWindow.xaml
-
-In your MainWindow.xaml, add the `BooleanToVisibilityConverter` and override the template for `TreeListViewRowIndent`.
-
-Here's an example combining these with a hypothetical `TreeListControl`:
-
+### MainWindow.xaml
 ```xaml
 <Window x:Class="YourNamespace.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -41,8 +73,7 @@ Here's an example combining these with a hypothetical `TreeListControl`:
         xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
         xmlns:local="clr-namespace:YourNamespace"
         Title="MainWindow">
-        
-    <!-- Add these resources to your existing Window.Resources -->
+
     <Window.Resources>
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <ResourceDictionary>
@@ -60,23 +91,39 @@ Here's an example combining these with a hypothetical `TreeListControl`:
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
-    
-    <!-- Your existing TreeListControl code should go here -->
+
     <Grid>
         <dxg:TreeListControl Name="treeList" 
                              ItemsSource="{Binding Employees}"
                              KeyFieldName="ID"
                              ParentFieldName="ParentID">
-            <!-- Your existing columns and other configurations -->
+            <dxg:TreeListControl.View>
+                <dxg:TreeListView/>
+            </dxg:TreeListControl.View>
+            <dxg:TreeListControl.Columns>
+                <dxg:TreeListColumn FieldName="ID"/>
+                <dxg:TreeListColumn FieldName="Name"/>
+            </dxg:TreeListControl.Columns>
         </dxg:TreeListControl>
     </Grid>
 </Window>
 ```
 
-Replace `YourNamespace` with the actual namespace where your `MainWindow` and `BooleanToVisibilityConverter` classes are defined.
+### MainWindow.xaml.cs
+```csharp
+using System.Windows;
 
-### 3. Update MainWindow.xaml.cs (If Needed)
+namespace YourNamespace
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            this.DataContext = new EmployeeViewModel();
+        }
+    }
+}
+```
 
-If you've already set the `DataContext` in your MainWindow.xaml.cs, you don't need to change anything there. The `BooleanToVisibilityConverter` will be picked up from the XAML resources.
-
-Now, with these changes, your `TreeListControl` should display a "+" when a node is collapsed and a "-" when a node is expanded.
+Replace `YourNamespace` with the actual namespace where your classes are defined. With this code, you should see a tree structure with customized expand/collapse icons.
