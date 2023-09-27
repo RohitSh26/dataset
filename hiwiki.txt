@@ -1,9 +1,3 @@
-
-If you want to track the missing files based on your search pattern, we can build a list of anticipated files in the source directory and then remove entries from this list as we find and copy them. At the end of the operation, any remaining items in this list would be your "missing" files.
-
-Here's how you can modify the `SearchAndCopyFiles` method to achieve this:
-
-```csharp
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29,26 +23,45 @@ public static class DirectoryHelper
 
         List<string> missingFiles = new List<string>();
 
-        // Process files for each specified subdirectory
-        foreach (string subDir in subdirectories)
+        foreach (string pattern in searchPatterns)
         {
-            string fullSourceSubDir = Path.Combine(sourceDirectory, subDir);
-            if (Directory.Exists(fullSourceSubDir))
+            // If the pattern is for the root, handle it separately
+            if (pattern == "*.*")
             {
-                foreach (string pattern in searchPatterns)
+                var anticipatedRootFiles = Directory.GetFiles(sourceDirectory, pattern).ToList();
+                foreach (var file in anticipatedRootFiles)
                 {
-                    // Anticipate files based on search pattern
-                    List<string> anticipatedFiles = Directory.GetFiles(fullSourceSubDir, pattern).ToList();
+                    var destFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
+                    if (File.Exists(file))
+                    {
+                        File.Copy(file, destFile, true);
+                    }
+                    else
+                    {
+                        missingFiles.Add(file);
+                    }
+                }
+            }
+
+            // Process files for each specified subdirectory
+            foreach (string subDir in subdirectories)
+            {
+                string fullSourceSubDir = Path.Combine(sourceDirectory, subDir);
+                if (Directory.Exists(fullSourceSubDir))
+                {
+                    List<string> anticipatedFiles = Directory.GetFiles(fullSourceSubDir, pattern, SearchOption.AllDirectories).ToList();
 
                     foreach (string file in anticipatedFiles)
                     {
-                        string destSubDirForFile = Path.GetDirectoryName(file).Replace(sourceDirectory, destinationDirectory);
-                        if (!Directory.Exists(destSubDirForFile))
-                        {
-                            Directory.CreateDirectory(destSubDirForFile);
-                        }
+                        string relativePath = file.Substring(sourceDirectory.Length + 1);
+                        string destFile = Path.Combine(destinationDirectory, relativePath);
 
-                        string destFile = Path.Combine(destSubDirForFile, Path.GetFileName(file));
+                        // Ensure the destination directory exists
+                        string destDir = Path.GetDirectoryName(destFile);
+                        if (!Directory.Exists(destDir))
+                        {
+                            Directory.CreateDirectory(destDir);
+                        }
 
                         // Check if the file exists and copy it
                         if (File.Exists(file))
@@ -67,76 +80,3 @@ public static class DirectoryHelper
         return missingFiles;
     }
 }
-```
-
-Now, the method will return a list of missing files. If a file is not found but is anticipated by the pattern, it will be added to the missing files list.
-
-
-
-
-
-Okay, if you have a specified list of subdirectories rather than processing all subdirectories, you can modify the method again to account for this.
-
-Here's how you can adjust the method:
-
-```csharp
-using System.Collections.Generic;
-using System.IO;
-
-public static class DirectoryHelper
-{
-    /// <summary>
-    /// Searches for files in the specified subdirectories of the source directory based on the provided search patterns
-    /// and copies them to the destination directory while preserving the directory structure.
-    /// </summary>
-    /// <param name="sourceDirectory">The source directory containing the subdirectories.</param>
-    /// <param name="destinationDirectory">The destination directory to copy files to.</param>
-    /// <param name="subdirectories">A list of subdirectory names to search within.</param>
-    /// <param name="searchPatterns">A list of search patterns to match against file names.</param>
-    public static void SearchAndCopyFiles(string sourceDirectory, string destinationDirectory, List<string> subdirectories, List<string> searchPatterns)
-    {
-        // Validate the source directory
-        if (!Directory.Exists(sourceDirectory))
-        {
-            throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {sourceDirectory}");
-        }
-
-        // Process files for each specified subdirectory
-        foreach (string subDir in subdirectories)
-        {
-            string fullSourceSubDir = Path.Combine(sourceDirectory, subDir);
-            if (Directory.Exists(fullSourceSubDir))
-            {
-                string fullDestSubDir = Path.Combine(destinationDirectory, subDir);
-
-                foreach (string pattern in searchPatterns)
-                {
-                    foreach (string file in Directory.GetFiles(fullSourceSubDir, pattern))
-                    {
-                        string destSubDirForFile = Path.GetDirectoryName(file).Replace(sourceDirectory, destinationDirectory);
-                        if (!Directory.Exists(destSubDirForFile))
-                        {
-                            Directory.CreateDirectory(destSubDirForFile);
-                        }
-
-                        string destFile = Path.Combine(destSubDirForFile, Path.GetFileName(file));
-                        File.Copy(file, destFile, true);
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-Usage:
-```csharp
-string sourceDir = @"C:\path\to\source";
-string destDir = @"C:\path\to\destination";
-List<string> subdirs = new List<string> { "subdir1", "subdir2" };  // Example subdirectories
-List<string> patterns = new List<string> { "*.log", "*.txt", "*.json" };  // Example search patterns
-
-DirectoryHelper.SearchAndCopyFiles(sourceDir, destDir, subdirs, patterns);
-```
-
-Now, this method will only search within the subdirectories specified in the `subdirs` list and for files matching any of the search patterns provided in the `patterns` list. It will then copy the matching files to the destination directory while preserving the same directory structure.
