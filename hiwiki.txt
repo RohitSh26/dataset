@@ -1,130 +1,65 @@
-Certainly, let's put it all together.
+Okay, if you have a specified list of subdirectories rather than processing all subdirectories, you can modify the method again to account for this.
 
-### Employee.cs
+Here's how you can adjust the method:
+
 ```csharp
-namespace YourNamespace
+using System.Collections.Generic;
+using System.IO;
+
+public static class DirectoryHelper
 {
-    public class Employee
+    /// <summary>
+    /// Searches for files in the specified subdirectories of the source directory based on the provided search patterns
+    /// and copies them to the destination directory while preserving the directory structure.
+    /// </summary>
+    /// <param name="sourceDirectory">The source directory containing the subdirectories.</param>
+    /// <param name="destinationDirectory">The destination directory to copy files to.</param>
+    /// <param name="subdirectories">A list of subdirectory names to search within.</param>
+    /// <param name="searchPatterns">A list of search patterns to match against file names.</param>
+    public static void SearchAndCopyFiles(string sourceDirectory, string destinationDirectory, List<string> subdirectories, List<string> searchPatterns)
     {
-        public string ID { get; set; }
-        public string ParentID { get; set; }
-        public string Name { get; set; }
-    }
-}
-```
-
-### EmployeeViewModel.cs
-```csharp
-using System.Collections.ObjectModel;
-
-namespace YourNamespace
-{
-    public class EmployeeViewModel
-    {
-        public ObservableCollection<Employee> Employees { get; set; }
-
-        public EmployeeViewModel()
+        // Validate the source directory
+        if (!Directory.Exists(sourceDirectory))
         {
-            Employees = new ObservableCollection<Employee>
-            {
-                new Employee { ID = "root", ParentID = null, Name = "Root"},
-                new Employee { ID = "1", ParentID = "root", Name = "John"},
-                new Employee { ID = "2", ParentID = "1", Name = "Jane"},
-                new Employee { ID = "3", ParentID = "1", Name = "Mark"}
-            };
+            throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {sourceDirectory}");
         }
-    }
-}
-```
 
-### BooleanToVisibilityConverter.cs
-```csharp
-using System;
-using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
-
-namespace YourNamespace
-{
-    public class BooleanToVisibilityConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        // Process files for each specified subdirectory
+        foreach (string subDir in subdirectories)
         {
-            if (value is bool booleanValue)
+            string fullSourceSubDir = Path.Combine(sourceDirectory, subDir);
+            if (Directory.Exists(fullSourceSubDir))
             {
-                return booleanValue ? Visibility.Visible : Visibility.Collapsed;
+                string fullDestSubDir = Path.Combine(destinationDirectory, subDir);
+
+                foreach (string pattern in searchPatterns)
+                {
+                    foreach (string file in Directory.GetFiles(fullSourceSubDir, pattern))
+                    {
+                        string destSubDirForFile = Path.GetDirectoryName(file).Replace(sourceDirectory, destinationDirectory);
+                        if (!Directory.Exists(destSubDirForFile))
+                        {
+                            Directory.CreateDirectory(destSubDirForFile);
+                        }
+
+                        string destFile = Path.Combine(destSubDirForFile, Path.GetFileName(file));
+                        File.Copy(file, destFile, true);
+                    }
+                }
             }
-            return Visibility.Hidden;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
         }
     }
 }
 ```
 
-### MainWindow.xaml
-```xaml
-<Window<Window x:Class="YourNamespace.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-        xmlns:local="clr-namespace:YourNamespace"
-        Title="MainWindow">
-
-    <Window.Resources>
-        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-    </Window.Resources>
-
-    <Grid>
-        <dxg:TreeListControl Name="treeList" 
-                             ItemsSource="{Binding Employees}"
-                             KeyFieldName="ID"
-                             ParentFieldName="ParentID">
-            <dxg:TreeListControl.View>
-                <dxg:TreeListView>
-                    <dxg:TreeListView.RowIndentTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <TextBlock Text="+" 
-                                           Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Collapsed, FallbackValue=Hidden}" 
-                                           VerticalAlignment="Center" 
-                                           HorizontalAlignment="Center"/>
-                                <TextBlock Text="-" 
-                                           Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Visible, FallbackValue=Hidden}" 
-                                           VerticalAlignment="Center" 
-                                           HorizontalAlignment="Center"/>
-                            </Grid>
-                        </DataTemplate>
-                    </dxg:TreeListView.RowIndentTemplate>
-                </dxg:TreeListView>
-            </dxg:TreeListControl.View>
-            <dxg:TreeListControl.Columns>
-                <dxg:TreeListColumn FieldName="ID"/>
-                <dxg:TreeListColumn FieldName="Name"/>
-            </dxg:TreeListControl.Columns>
-        </dxg:TreeListControl>
-    </Grid>
-</Window>
-```
-
-### MainWindow.xaml.cs
+Usage:
 ```csharp
-using System.Windows;
+string sourceDir = @"C:\path\to\source";
+string destDir = @"C:\path\to\destination";
+List<string> subdirs = new List<string> { "subdir1", "subdir2" };  // Example subdirectories
+List<string> patterns = new List<string> { "*.log", "*.txt", "*.json" };  // Example search patterns
 
-namespace YourNamespace
-{
-    public partial class MainWindow : Window
-    {
-        public MainWindow()
-        {
-            InitializeComponent();
-            this.DataContext = new EmployeeViewModel();
-        }
-    }
-}
+DirectoryHelper.SearchAndCopyFiles(sourceDir, destDir, subdirs, patterns);
 ```
 
-Replace `YourNamespace` with the actual namespace where your classes are defined. With this code, you should see a tree structure with customized expand/collapse icons.
+Now, this method will only search within the subdirectories specified in the `subdirs` list and for files matching any of the search patterns provided in the `patterns` list. It will then copy the matching files to the destination directory while preserving the same directory structure.
