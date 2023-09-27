@@ -25,25 +25,7 @@ public static class DirectoryHelper
 
         foreach (string pattern in searchPatterns)
         {
-            // If the pattern is for the root, handle it separately
-            if (pattern == "*.*")
-            {
-                var anticipatedRootFiles = Directory.GetFiles(sourceDirectory, pattern).ToList();
-                foreach (var file in anticipatedRootFiles)
-                {
-                    var destFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
-                    if (File.Exists(file))
-                    {
-                        File.Copy(file, destFile, true);
-                    }
-                    else
-                    {
-                        missingFiles.Add(file);
-                    }
-                }
-            }
-
-            // Process files for each specified subdirectory
+            // Handle files for each specified subdirectory
             foreach (string subDir in subdirectories)
             {
                 string fullSourceSubDir = Path.Combine(sourceDirectory, subDir);
@@ -73,6 +55,21 @@ public static class DirectoryHelper
                             missingFiles.Add(file);
                         }
                     }
+                }
+            }
+
+            // Handle files in the root directory
+            List<string> anticipatedRootFiles = Directory.GetFiles(sourceDirectory, pattern).ToList();
+            foreach (var file in anticipatedRootFiles)
+            {
+                var destFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
+                if (File.Exists(file))
+                {
+                    File.Copy(file, destFile, true);
+                }
+                else
+                {
+                    missingFiles.Add(file);
                 }
             }
         }
