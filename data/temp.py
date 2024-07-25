@@ -9,6 +9,7 @@ class PydanticFieldExtractor(ast.NodeVisitor):
         self.numeric_fields = defaultdict(list)
 
     def visit_ClassDef(self, node: ast.ClassDef):
+        print(f"Visiting class: {node.name}")
         is_pydantic_model = any(
             isinstance(base, ast.Name) and base.id == "BaseModel" or
             isinstance(base, ast.Attribute) and base.attr == "BaseModel"
@@ -16,10 +17,12 @@ class PydanticFieldExtractor(ast.NodeVisitor):
         )
         
         if is_pydantic_model:
+            print(f"Identified Pydantic model: {node.name}")
             for stmt in node.body:
                 if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
                     field_name = stmt.target.id
                     field_type = self.get_field_type(stmt.annotation)
+                    print(f"Found field: {field_name} with type: {field_type}")
                     if field_type in {"int", "float"}:
                         self.numeric_fields[node.name].append({"field": field_name, "type": field_type})
         self.generic_visit(node)
@@ -27,11 +30,15 @@ class PydanticFieldExtractor(ast.NodeVisitor):
     def get_field_type(self, annotation):
         if isinstance(annotation, ast.Name):
             return annotation.id
-        elif isinstance(annotation, ast.Subscript) and isinstance(annotation.value, ast.Name):
-            return annotation.value.id
+        elif isinstance(annotation, ast.Subscript):
+            if isinstance(annotation.value, ast.Name):
+                return annotation.value.id
+            elif isinstance(annotation.value, ast.Attribute):
+                return annotation.value.attr
         return None
 
 def extract_numeric_fields_from_file(file_path: str) -> Dict[str, List[Dict[str, str]]]:
+    print(f"Parsing file: {file_path}")
     with open(file_path, "r") as file:
         tree = ast.parse(file.read())
     
